@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      (function() {
+        // Suppress Vite HMR WebSocket disconnection notices in AI Studio proxy environment
+        const origConsoleError = console.error;
+        console.error = function(...args) {
+          const firstArg = args[0];
+          const text = typeof firstArg === 'string' ? firstArg : (firstArg && firstArg.message ? firstArg.message : String(firstArg));
+          if (text.includes('[vite]') || text.includes('WebSocket closed without opened') || text.includes('WebSocket')) {
+            return;
+          }
+          origConsoleError.apply(console, args);
+        };
+
+        const OrigWebSocket = window.WebSocket;
+        if (OrigWebSocket) {
+          function MockViteWebSocket(url, protocols) {
+            const isViteHmr = protocols === 'vite-hmr' || (typeof url === 'string' && (url.includes('vite') || url.includes('/@vite')));
+            if (isViteHmr) {
+              const target = new EventTarget();
+              target.readyState = 1; // WebSocket.OPEN
+              target.send = function() {};
+              target.close = function() {};
+              target.binaryType = 'blob';
+              target.bufferedAmount = 0;
+              target.extensions = '';
+              target.protocol = 'vite-hmr';
+              target.url = String(url);
+              target.onopen = null;
+              target.onclose = null;
+              target.onerror = null;
+              target.onmessage = null;
+              setTimeout(function() {
+                const ev = new Event('open');
+                target.dispatchEvent(ev);
+                if (typeof target.onopen === 'function') target.onopen(ev);
+              }, 10);
+              return target;
+            }
+            return new OrigWebSocket(url, protocols);
+          }
+          MockViteWebSocket.prototype = OrigWebSocket.prototype;
+          MockViteWebSocket.CONNECTING = 0;
+          MockViteWebSocket.OPEN = 1;
+          MockViteWebSocket.CLOSING = 2;
+          MockViteWebSocket.CLOSED = 3;
+          window.WebSocket = MockViteWebSocket;
+        }
+
+        window.addEventListener('error', function(event) {
+          if (event && (event.message?.includes('WebSocket') || (event.error && String(event.error).includes('WebSocket')))) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+            return true;
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function(event) {
+          if (event && event.reason && String(event.reason).includes('WebSocket')) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="PULSE" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>PULSE — Minimal Gym Coach</title>
+    <meta name="description" content="Ein moderner, minimalistischer persönlicher Gym-Coach zur Trainingserfassung, visuellen Muskelbelastungsanalyse und Fortschrittsverfolgung." />
+    <meta property="og:title" content="PULSE — Minimal Gym Coach" />
+    <meta property="og:description" content="Ein moderner, minimalistischer persönlicher Gym-Coach zur Trainingserfassung, visuellen Muskelbelastungsanalyse und Fortschrittsverfolgung." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-black text-white antialiased selection:bg-[#FF9F0A]/30 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

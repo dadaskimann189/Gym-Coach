@@ -1,0 +1,6 @@
+{
+  "name": "PULSE — Minimal Gym Coach",
+  "description": "Ein moderner, minimalistischer persönlicher Gym-Coach zur Trainingserfassung, visuellen Muskelbelastungsanalyse und Fortschrittsverfolgung.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
